@@ -14,13 +14,11 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v4
 
-    # Install Gradle system-wide so it can generate the wrapper
     - name: Install Gradle
       run: |
         sudo apt-get update
         sudo apt-get install -y gradle
 
-    # Generate the Gradle wrapper if missing
     - name: Generate Gradle Wrapper
       run: |
         echo "Generating Gradle wrapper..."
@@ -36,7 +34,7 @@ jobs:
       run: chmod +x ./gradlew
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+      run: ./gradlew :app:assembleDebug --stacktrace
 
     - name: Upload Debug APK Artifact
       uses: actions/upload-artifact@v4
