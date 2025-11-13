@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+
+android {
+    namespace "com.mrtechforge.mrtfnfc"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.mrtechforge.mrtfnfc"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "com.google.android.material:material:1.11.0"
+}
