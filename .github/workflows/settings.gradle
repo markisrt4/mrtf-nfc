@@ -1,0 +1,2 @@
+rootProject.name = "mrtf-nfc"
+include ':app'
