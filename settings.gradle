@@ -1,2 +1,14 @@
+
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = "mrtf-nfc"
+include(":app")
+
 rootProject.name = "mrtf-nfc"
 include(":app")
