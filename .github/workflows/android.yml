@@ -27,8 +27,10 @@ jobs:
       with:
         cache-disabled: true
 
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
+    - name: Fix permissions
+      run: |
+        chmod +x gradlew
+        chmod +x gradle/wrapper/gradle-wrapper.jar
 
     - name: Build Debug APK
       run: ./gradlew :app:assembleDebug --stacktrace
