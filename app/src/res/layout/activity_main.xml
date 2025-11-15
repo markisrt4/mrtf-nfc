@@ -4,14 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/mrtf_steel_bg">
+    android:background="@color/mrtf_bg_dark">
 
     <TextView
         android:id="@+id/statusText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="MRTF NFC Actions\nTap an NFC tag to trigger an action."
-        android:textColor="#DDE3EA"
+        android:textColor="@color/mrtf_text_light"
         android:textSize="18sp"
         android:gravity="center"
         android:padding="24dp"
