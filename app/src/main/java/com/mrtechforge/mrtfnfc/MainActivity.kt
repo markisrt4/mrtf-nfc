@@ -2,154 +2,118 @@ package com.mrtechforge.mrtfnfc
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.Ndef
+import android.nfc.tech.NdefFormatable
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var status: TextView
+    private lateinit var statusView: TextView
+    private lateinit var testButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        status = findViewById(R.id.statusText)
+        statusView = findViewById(R.id.statusText)
+        testButton = findViewById(R.id.testButton)
 
-        handleIntent(intent)
-    }
-
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        intent?.let { handleIntent(it) }
-    }
-
-    private fun handleIntent(intent: Intent) {
-        val data = intent.data ?: run {
-            status.text = "MRTF NFC Actions\nReady for tags."
-            return
-        }
-
-        val action = data.host ?: ""
-        val pkg = data.getQueryParameter("pkg")
-        val dest = data.getQueryParameter("dest")
-
-        when (action.lowercase()) {
-            "wifi"       -> openWifi()
-            "vpn"        -> openVpn()
-            "bt"         -> openBluetooth()
-            "auto"       -> openAndroidAuto()
-            "appinfo",
-            "clearbrowser" -> pkg?.let { openAppInfo(it) }
-            "dnd"        -> openDnd()
-            "night"      -> openNightSettings()
-            "drive"      -> startDriveMode()
-            "maps"       -> openMaps(dest)
-            "settings"   -> openMainSettings()
-            "battery"    -> openBattery()
-            else         -> status.text = "Unknown MRTF action: $action"
+        testButton.setOnClickListener {
+            statusView.text = "Launching Settings…"
+            launchNfcSettings()
         }
     }
 
-    private fun openWifi() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startActivity(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
-            } else {
-                startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
+    override fun onResume() {
+        super.onResume()
+
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED == intent.action ||
+            NfcAdapter.ACTION_TECH_DISCOVERED == intent.action ||
+            NfcAdapter.ACTION_TAG_DISCOVERED == intent.action
+        ) {
+            val tag: Tag? = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            tag?.let {
+                statusView.text = "Tag detected — writing..."
+                writeDefaultNdefMessage(it)
             }
-            status.text = "Opened Wi-Fi / Internet panel."
-        } catch (e: Exception) {
-            status.text = "Error opening Wi-Fi."
         }
     }
 
-    private fun openVpn() {
-        try {
-            startActivity(Intent("android.settings.VPN_SETTINGS"))
-            status.text = "Opened VPN settings."
-        } catch (e: Exception) {
-            status.text = "VPN settings not supported."
-        }
-    }
+    // -----------------------------------------------------------
+    // NFC Write Logic (Simple Test Payload)
+    // -----------------------------------------------------------
+    private fun writeDefaultNdefMessage(tag: Tag) {
+        val ndefMessage = Ndef.createRecord(
+            "text/plain",
+            "Hello from MRTF NFC!".toByteArray(),
+            ByteArray(0),
+            ByteArray(0)
+        )
+        val message = NdefMessage(arrayOf(ndefMessageRecord = ndefMessage))
 
-    private fun openBluetooth() {
         try {
-            startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-            status.text = "Opened Bluetooth settings."
-        } catch (e: Exception) {
-            status.text = "Error opening Bluetooth."
-        }
-    }
-
-    private fun openAndroidAuto() {
-        val pkg = "com.google.android.projection.gearhead"
-        try {
-            val launch = packageManager.getLaunchIntentForPackage(pkg)
-            if (launch != null) {
-                startActivity(launch)
-                status.text = "Launched Android Auto."
+            val ndef = Ndef.get(tag)
+            if (ndef != null) {
+                ndef.connect()
+                if (!ndef.isWritable) {
+                    statusView.text = "Tag is not writable."
+                    return
+                }
+                ndef.writeNdefMessage(message)
+                ndef.close()
+                statusView.text = "Write successful!"
             } else {
-                status.text = "Android Auto not installed."
+                val format = NdefFormatable.get(tag)
+                if (format != null) {
+                    format.connect()
+                    format.format(message)
+                    format.close()
+                    statusView.text = "Formatted & written successfully!"
+                } else {
+                    statusView.text = "NDEF not supported."
+                }
             }
         } catch (e: Exception) {
-            status.text = "Error launching Android Auto."
+            statusView.text = "Error writing tag: ${e.message}"
         }
     }
 
-    private fun openAppInfo(packageName: String) {
-        try {
-            val uri = Uri.parse("package:$packageName")
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
-            startActivity(intent)
-            status.text = "Opened App Info for $packageName."
-        } catch (e: Exception) {
-            status.text = "Error opening App Info."
-        }
+    // -----------------------------------------------------------
+    // Settings Launchers — All PUBLIC/SUPPORTED Intents
+    // -----------------------------------------------------------
+
+    private fun launchWifiSettings() {
+        startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
     }
 
-    private fun openDnd() {
-        try {
-            startActivity(Intent(Settings.ACTION_ZEN_MODE_SETTINGS))
-            status.text = "Opened Do Not Disturb settings."
-        } catch (e: Exception) {
-            status.text = "Error opening DND."
-        }
+    private fun launchBluetoothSettings() {
+        startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
     }
 
-    private fun openNightSettings() {
-        try {
-            startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS))
-            status.text = "Opened Display / Night settings."
-        } catch (e: Exception) {
-            status.text = "Error opening display settings."
-        }
+    private fun launchNfcSettings() {
+        startActivity(Intent(Settings.ACTION_NFC_SETTINGS))
     }
 
-    private fun startDriveMode() {
-        openAndroidAuto()
-        openDnd()
-        status.text = "Drive mode: Android Auto + DND opened."
-    }
-
-    private fun openMaps(dest: String?) {
-        val query = dest ?: "Home"
-        val uri = Uri.parse("google.navigation:q=$query")
-        val intent = Intent(Intent.ACTION_VIEW, uri)
-            .setPackage("com.google.android.apps.maps")
+    private fun launchDoNotDisturbSettings() {
+        // SAFE PUBLIC STRING VERSION
+        val intent = Intent("android.settings.ZEN_MODE_SETTINGS")
         startActivity(intent)
-        status.text = "Launching Maps → $query"
     }
 
-    private fun openMainSettings() {
-        startActivity(Intent(Settings.ACTION_SETTINGS))
-        status.text = "Opened main Settings."
+    private fun launchAppNotificationSettings() {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        }
+        startActivity(intent)
     }
 
-    private fun openBattery() {
-        startActivity(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))
-        status.text = "Opened Battery settings."
+    private fun launchCustomUrl(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 }
