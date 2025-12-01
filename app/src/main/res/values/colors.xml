@@ -1,7 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="mrtf_blue">#00B8D4</color>
-    <color name="mrtf_blue_dark">#008BA3</color>
-    <color name="mrtf_text_light">#DDE3EA</color>
-    <color name="mrtf_bg_dark">#101216</color>
-</resources>
+<resources><color name="black">#000000</color><color name="white">#FFFFFF</color></resources>
