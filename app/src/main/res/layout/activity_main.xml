@@ -3,25 +3,65 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
     android:padding="24dp"
-    android:background="@android:color/background_dark">
+    android:gravity="center"
+    android:background="@color/black">
 
     <TextView
-        android:id="@+id/statusText"
+        android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MRTF NFC — Ready"
+        android:text="MRTF NFC Utility"
+        android:textSize="24sp"
         android:textColor="@android:color/white"
-        android:textSize="20sp"
-        android:padding="16dp" />
+        android:layout_marginBottom="32dp" />
 
     <Button
-        android:id="@+id/testButton"
-        android:layout_width="wrap_content"
+        android:id="@+id/btnWifi"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Test NFC Settings"
-        android:padding="12dp"
-        android:layout_marginTop="30dp" />
+        android:text="Toggle Wi-Fi Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnBluetooth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Toggle Bluetooth Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnDND"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Toggle Do-Not-Disturb Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnCarLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Car Location Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnSOSText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SOS Text Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnBedtime"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bedtime / Night Tag"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnOpenApp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Any App Tag" />
 
 </LinearLayout>

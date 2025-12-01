@@ -1,59 +1,110 @@
 package com.mrtechforge.mrtfnfc
 
+import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
+import android.nfc.NdefMessage
+import android.nfc.NdefRecord
+import android.nfc.NfcAdapter
 import android.os.Bundle
 import android.widget.Button
-import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var statusText: TextView
-    private lateinit var testButton: Button
+    private var nfcAdapter: NfcAdapter? = null
+    private var pendingIntent: PendingIntent? = null
+    private var tagPayload: ByteArray? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        statusText = findViewById(R.id.statusText)
-        testButton = findViewById(R.id.testButton)
-
-        testButton.setOnClickListener {
-            statusText.text = "Pressed Test Button"
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+        if (nfcAdapter == null || !nfcAdapter!!.isEnabled) {
+            Toast.makeText(this, "NFC is not supported or disabled.", Toast.LENGTH_LONG).show()
         }
 
-        // Handle app launch via NFC tag
-        handleIntent(intent)
+        pendingIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_MUTABLE
+        )
+
+        // --- Hook up buttons ---
+        findViewById<Button>(R.id.btnWifi).setOnClickListener {
+            tagPayload = "mrtf://wifi-toggle".toByteArray()
+            Toast.makeText(this, "Ready to write Wi-Fi Toggle tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnBluetooth).setOnClickListener {
+            tagPayload = "mrtf://bt-toggle".toByteArray()
+            Toast.makeText(this, "Ready to write Bluetooth Toggle tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnDND).setOnClickListener {
+            tagPayload = "mrtf://dnd".toByteArray()
+            Toast.makeText(this, "Ready to write DND tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnCarLocation).setOnClickListener {
+            tagPayload = "mrtf://car-location".toByteArray()
+            Toast.makeText(this, "Ready to write Car Location tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnSOSText).setOnClickListener {
+            tagPayload = "mrtf://sos".toByteArray()
+            Toast.makeText(this, "Ready to write SOS Text tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnBedtime).setOnClickListener {
+            tagPayload = "mrtf://bedtime".toByteArray()
+            Toast.makeText(this, "Ready to write Bedtime tag", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btnOpenApp).setOnClickListener {
+            tagPayload = "mrtf://openapp".toByteArray()
+            Toast.makeText(this, "Ready to write App Launcher tag", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nfcAdapter?.enableForegroundDispatch(
+            this,
+            pendingIntent,
+            arrayOf(),
+            null
+        )
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableForegroundDispatch(this)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        if (intent != null) {
-            handleIntent(intent)
+
+        val tag = intent?.getParcelableExtra<android.nfc.Tag>(NfcAdapter.EXTRA_TAG)
+        if (tag != null && tagPayload != null) {
+            val record = NdefRecord.createMime("text/plain", tagPayload!!)
+            val message = NdefMessage(arrayOf(record))
+
+            try {
+                val ndef = android.nfc.tech.Ndef.get(tag)
+                ndef?.connect()
+                ndef?.writeNdefMessage(message)
+                ndef?.close()
+
+                Toast.makeText(this, "Tag written successfully!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                toast("Write failed: ${e.message}")
+            }
         }
     }
 
-    private fun handleIntent(intent: Intent) {
-        val action = intent.action
-        val data: Uri? = intent.data
-
-        if (action == Intent.ACTION_VIEW && data != null) {
-            statusText.text = "Protocol triggered:\n${data.toString()}"
-
-            // Example: mrtf://wifi/toggle
-            when (data.host) {
-                "wifi" -> {
-                    statusText.text = "Received: WiFi command (placeholder)"
-                }
-                "dnd" -> {
-                    val zenIntent = Intent("android.settings.ZEN_MODE_SETTINGS")
-                    startActivity(zenIntent)
-                }
-                else -> {
-                    statusText.text = "Unhandled command:\n${data}"
-                }
-            }
-        }
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
     }
 }
