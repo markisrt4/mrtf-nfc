@@ -1,1 +1,22 @@
-<resources><color name="black">#000000</color><color name="white">#FFFFFF</color></resources>
+<resources>
+    <!-- Brand blues -->
+    <color name="mrtf_blue_primary">#153D77</color>        <!-- Forge blue -->
+    <color name="mrtf_blue_primary_dark">#1976D2</color>   <!-- Darker variant -->
+    <color name="mrtf_on_primary">#FFFFFF</color>
+
+    <!-- Background / surfaces (keep your dark forge vibe) -->
+    <color name="mrtf_background">#121212</color>
+    <color name="mrtf_surface">#1E1E1E</color>
+    <color name="mrtf_on_surface">#FFFFFF</color>
+
+    <!-- Accent, you can tweak or ignore for now -->
+    <color name="mrtf_secondary">#03DAC6</color>
+    <color name="mrtf_on_secondary">#000000</color>
+
+    <!-- Buttons -->
+    <color name="mrtf_button_border">#33FFFFFF</color>
+    <color name="mrtf_button_ripple">#332196F3</color>
+
+    <!-- Icon background -->
+    <color name="mrtf_icon_bg">#121212</color>
+</resources>

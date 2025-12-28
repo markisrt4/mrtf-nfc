@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="540" height="540" viewBox="0 0 540 540" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.9" stroke="#0A6DFF" stroke-width="6" stroke-linecap="round">
+    <path d="M270 65c-95 0-175 80-175 175 0 48 18 94 50 128" opacity="0.25"/>
+    <path d="M270 105c-75 0-135 60-135 135 0 38 14 73 40 100" opacity="0.35"/>
+    <path d="M270 145c-55 0-95 40-95 95 0 28 10 54 28 74" opacity="0.45"/>
+    <path d="M270 185c-35 0-55 25-55 55 0 18 6 34 16 46" opacity="0.55"/>
+    <path d="M270 225c-15 0-25 10-25 25 0 8 3 16 8 22" opacity="0.65"/>
+    
+    <!-- Right arcs -->
+    <path d="M270 65c95 0 175 80 175 175 0 48-18 94-50 128" opacity="0.25"/>
+    <path d="M270 105c75 0 135 60 135 135 0 38-14 73-40 100" opacity="0.35"/>
+    <path d="M270 145c55 0 95 40 95 95 0 28-10 54-28 74" opacity="0.45"/>
+    <path d="M270 185c35 0 55 25 55 55 0 18-6 34-16 46" opacity="0.55"/>
+    <path d="M270 225c15 0 25 10 25 25 0 8-3 16-8 22" opacity="0.65"/>
+  </g>
+</svg>

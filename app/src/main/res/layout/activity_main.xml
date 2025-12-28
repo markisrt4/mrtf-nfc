@@ -1,67 +1,231 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp"
-    android:gravity="center"
-    android:background="@color/black">
+    android:background="@color/mrtf_background">
 
-    <TextView
-        android:id="@+id/titleText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="MRTF NFC Utility"
-        android:textSize="24sp"
-        android:textColor="@android:color/white"
-        android:layout_marginBottom="32dp" />
-
-    <Button
-        android:id="@+id/btnWifi"
+    <!-- Top app bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Toggle Wi-Fi Tag"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="?attr/actionBarSize"
+        android:backgroundTint="@color/mrtf_surface"
+        app:title="MRTF NFC Tags"
+        app:titleTextColor="@color/mrtf_on_surface"
+        app:navigationIcon="@mipmap/ic_launcher"
+        app:layout_scrollFlags="scroll|enterAlways" />
 
-    <Button
-        android:id="@+id/btnBluetooth"
+    <!-- Content -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Toggle Bluetooth Tag"
-        android:layout_marginBottom="16dp" />
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:padding="16dp">
 
-    <Button
-        android:id="@+id/btnDND"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Toggle Do-Not-Disturb Tag"
-        android:layout_marginBottom="16dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-    <Button
-        android:id="@+id/btnCarLocation"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Save Car Location Tag"
-        android:layout_marginBottom="16dp" />
+            <!-- Header -->
+            <TextView
+                android:id="@+id/txtTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forge your NFC action tags"
+                android:textColor="@color/mrtf_on_surface"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp" />
 
-    <Button
-        android:id="@+id/btnSOSText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="SOS Text Tag"
-        android:layout_marginBottom="16dp" />
+            <TextView
+                android:id="@+id/txtSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose an action, then tap a tag to write it."
+                android:textColor="@color/mrtf_button_border"
+                android:textSize="14sp"
+                android:paddingBottom="16dp" />
 
-    <Button
-        android:id="@+id/btnBedtime"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Bedtime / Night Tag"
-        android:layout_marginBottom="16dp" />
+            <!-- Card: Write MRTF tags -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="@color/mrtf_surface"
+                app:cardCornerRadius="16dp"
+                app:cardUseCompatPadding="true">
 
-    <Button
-        android:id="@+id/btnOpenApp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Open Any App Tag" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-</LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Write tags"
+                        android:textColor="@color/mrtf_on_surface"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:paddingBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap one of these actions, then hold an NFC tag near your phone."
+                        android:textColor="@color/mrtf_button_border"
+                        android:textSize="13sp"
+                        android:paddingBottom="12dp" />
+
+                    <!-- Row 1 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:weightSum="2"
+                        android:paddingBottom="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWifi"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Wi-Fi"
+                            android:drawablePadding="8dp"
+                            />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnBluetooth"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Bluetooth" />
+                    </LinearLayout>
+
+                    <!-- Row 2 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:weightSum="2"
+                        android:paddingBottom="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnDND"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="DND / Bedtime" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCarLocation"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Car location" />
+                    </LinearLayout>
+
+                    <!-- Row 3 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:weightSum="2">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSOSText"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="SOS" />
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnOpenApp"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Open app" />
+                    </LinearLayout>
+
+                    <!-- Row 4 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:paddingTop="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnBedtime"
+                            style="?attr/materialButtonStyle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Bedtime" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Info card: Mode hint -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/mrtf_surface"
+                app:cardCornerRadius="16dp"
+                app:cardUseCompatPadding="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tip"
+                        android:textColor="@color/mrtf_secondary"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:paddingBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="If you scan an MRTF tag without selecting a button, the app will read the tag and route the action instead of writing."
+                        android:textColor="@color/mrtf_on_surface"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

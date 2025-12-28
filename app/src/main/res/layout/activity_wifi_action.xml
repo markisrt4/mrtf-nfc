@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mrtf_background"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wi-Fi tag"
+        android:textColor="@color/mrtf_on_surface"
+        android:textStyle="bold"
+        android:textSize="20sp"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tap the button below to open Wi-Fi controls."
+        android:textColor="@color/mrtf_button_border"
+        android:textSize="14sp"
+        android:paddingBottom="24dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnOpenWifiSettings"
+        style="?attr/materialButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Wi-Fi settings" />
+</LinearLayout>

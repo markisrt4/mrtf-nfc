@@ -1,7 +1,32 @@
-
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.MRTFApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/black</item>
-        <item name="colorOnPrimary">@color/white</item>
+        <!-- Brand colors -->
+        <item name="colorPrimary">@color/mrtf_blue_primary</item>
+        <item name="colorPrimaryVariant">@color/mrtf_blue_primary_dark</item>
+        <item name="colorOnPrimary">@color/mrtf_on_primary</item>
+
+        <item name="colorSecondary">@color/mrtf_secondary</item>
+        <item name="colorOnSecondary">@color/mrtf_on_secondary</item>
+
+        <!-- Background / surfaces -->
+        <item name="android:colorBackground">@color/mrtf_background</item>
+        <item name="colorSurface">@color/mrtf_surface</item>
+        <item name="colorOnSurface">@color/mrtf_on_surface</item>
+
+        <!-- Default button style -->
+        <item name="materialButtonStyle">@style/Widget.MRTF.MaterialButton</item>
+    </style>
+
+    <style name="Widget.MRTF.MaterialButton" parent="Widget.MaterialComponents.Button">
+        <!-- removed android:textAllCaps -->
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="cornerRadius">999dp</item>
+        <item name="android:minHeight">56dp</item>
+
+        <!-- Forge blue button -->
+        <item name="backgroundTint">@color/mrtf_blue_primary</item>
+        <item name="rippleColor">@color/mrtf_button_ripple</item>
+        <item name="android:textColor">@color/mrtf_on_primary</item>
     </style>
 </resources>

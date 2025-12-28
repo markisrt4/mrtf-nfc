@@ -17,26 +17,25 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
+    private val TAG = "MRTF"
+
     private var nfcAdapter: NfcAdapter? = null
     private var pendingIntent: PendingIntent? = null
-    private var tagPayload: ByteArray? = null
+    private var tagPayload: ByteArray? = null  // non-null = WRITE MODE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
-
         if (nfcAdapter == null) {
             toast("This device does not support NFC.")
-            // You could also disable buttons or finish the activity here.
-            Log.e("MRTF", "NFC adapter is null (no NFC hardware).")
+            Log.e(TAG, "NFC adapter is null.")
         } else if (nfcAdapter?.isEnabled == false) {
             toast("NFC is disabled. Please enable it in system settings.")
-            Log.w("MRTF", "NFC is present but disabled.")
+            Log.w(TAG, "NFC present but disabled.")
         }
 
-        // PendingIntent for foreground dispatch
         val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         } else {
@@ -50,7 +49,7 @@ class MainActivity : AppCompatActivity() {
             flags
         )
 
-        // --- Hook up buttons (select write payloads) ---
+        // --- Writer buttons: select payload to write ---
         findViewById<Button>(R.id.btnWifi).setOnClickListener {
             tagPayload = "mrtf://wifi-toggle".toByteArray()
             toast("Ready to write Wi-Fi Toggle tag")
@@ -89,45 +88,42 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        Log.d("MRTF", "onResume: enabling NFC foreground dispatch")
-        nfcAdapter?.enableForegroundDispatch(
-            this,
-            pendingIntent,
-            null,   // no specific intent filters for now
-            null    // no tech filters
-        )
+        Log.d(TAG, "onResume: enabling foreground dispatch")
+        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
     override fun onPause() {
         super.onPause()
-        Log.d("MRTF", "onPause: disabling NFC foreground dispatch")
+        Log.d(TAG, "onPause: disabling foreground dispatch")
         nfcAdapter?.disableForegroundDispatch(this)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        Log.d("MRTF", "onNewIntent: $intent")
+        Log.d(TAG, "onNewIntent: $intent")
 
         val tag = intent?.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
-
         if (tag == null) {
-            Log.w("MRTF", "No Tag found in onNewIntent")
+            Log.w(TAG, "No Tag in intent")
             toast("No NFC tag detected.")
             return
         }
 
-        if (tagPayload == null) {
-            Log.w("MRTF", "Tag tapped but no payload selected")
-            toast("Tap a button first to choose what to write.")
-            return
+        // If we have a payload selected, we are in WRITE mode.
+        if (tagPayload != null) {
+            Log.d(TAG, "Write mode: writing payload to tag")
+            val payload = tagPayload!!
+            val record = NdefRecord.createMime("text/plain", payload)
+            val message = NdefMessage(arrayOf(record))
+            writeNdefToTag(tag, message)
+        } else {
+            // No payload selected → READER/CLIENT mode.
+            Log.d(TAG, "Read mode: reading tag and routing action")
+            readAndRouteTag(tag)
         }
-
-        val payload = tagPayload!!
-        val record = NdefRecord.createMime("text/plain", payload)
-        val message = NdefMessage(arrayOf(record))
-
-        writeNdefToTag(tag, message)
     }
+
+    // --- WRITE HELPERS ---
 
     private fun writeNdefToTag(tag: Tag, message: NdefMessage) {
         try {
@@ -138,7 +134,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (!ndef.isWritable) {
                     toast("Tag is read-only.")
-                    Log.e("MRTF", "NDEF tag is read-only")
+                    Log.e(TAG, "NDEF tag is read-only")
                     ndef.close()
                     return
                 }
@@ -146,7 +142,7 @@ class MainActivity : AppCompatActivity() {
                 val size = message.toByteArray().size
                 if (ndef.maxSize < size) {
                     toast("Tag is too small (${ndef.maxSize} bytes) for this message ($size bytes).")
-                    Log.e("MRTF", "Tag too small: max=${ndef.maxSize}, needed=$size")
+                    Log.e(TAG, "Tag too small: max=${ndef.maxSize}, needed=$size")
                     ndef.close()
                     return
                 }
@@ -155,24 +151,104 @@ class MainActivity : AppCompatActivity() {
                 ndef.close()
 
                 toast("Tag written successfully!")
-                Log.i("MRTF", "Tag written successfully.")
+                Log.i(TAG, "Tag written successfully.")
+
+                // after successful write, switch back to reader mode
+                tagPayload = null
             } else {
-                // Tag is not NDEF formatted – try to format it
                 val format = NdefFormatable.get(tag)
                 if (format != null) {
                     format.connect()
                     format.format(message)
                     format.close()
                     toast("Tag formatted and written successfully!")
-                    Log.i("MRTF", "Tag formatted and written successfully.")
+                    Log.i(TAG, "Tag formatted and written successfully.")
+
+                    // after successful write, switch back to reader mode
+                    tagPayload = null
                 } else {
                     toast("This tag does not support NDEF.")
-                    Log.e("MRTF", "Tag does not support NDEF or NdefFormatable.")
+                    Log.e(TAG, "Tag not NDEF/NdefFormatable.")
                 }
             }
         } catch (e: Exception) {
             toast("Write failed: ${e.message}")
-            Log.e("MRTF", "Error writing tag", e)
+            Log.e(TAG, "Error writing tag", e)
+        }
+    }
+
+    // --- READ + ROUTER ---
+
+    private fun readAndRouteTag(tag: Tag) {
+        try {
+            val ndef = Ndef.get(tag)
+            if (ndef == null) {
+                toast("Tag is not NDEF formatted.")
+                Log.e(TAG, "Tag is not NDEF")
+                return
+            }
+
+            ndef.connect()
+            val message = ndef.cachedNdefMessage ?: ndef.ndefMessage
+            ndef.close()
+
+            if (message == null || message.records.isEmpty()) {
+                toast("Tag is empty.")
+                Log.w(TAG, "NDEF message is null or empty")
+                return
+            }
+
+            val record = message.records[0]
+            if (record.tnf != NdefRecord.TNF_MIME_MEDIA ||
+                String(record.type, Charsets.US_ASCII) != "text/plain"
+            ) {
+                toast("Tag is not an MRTF action tag.")
+                Log.w(TAG, "Unexpected record type: tnf=${record.tnf}, type=${String(record.type)}")
+                return
+            }
+
+            val actionString = String(record.payload, Charsets.UTF_8)
+            Log.d(TAG, "Read MRTF action payload: $actionString")
+            routeMrtfAction(actionString)
+
+        } catch (e: Exception) {
+            toast("Failed to read tag: ${e.message}")
+            Log.e(TAG, "Error reading tag", e)
+        }
+    }
+
+    private fun routeMrtfAction(action: String) {
+        when (action) {
+            "mrtf://wifi-toggle" -> {
+                Log.i(TAG, "Route: wifi-toggle")
+                startActivity(Intent(this, WifiActionActivity::class.java))
+            }
+            "mrtf://bt-toggle" -> {
+                Log.i(TAG, "Route: bt-toggle")
+                startActivity(Intent(this, BluetoothActionActivity::class.java))
+            }
+            "mrtf://dnd", "mrtf://bedtime" -> {
+                Log.i(TAG, "Route: bedtime/dnd")
+                startActivity(Intent(this, BedtimeActionActivity::class.java))
+            }
+            "mrtf://car-location" -> {
+                Log.i(TAG, "Route: car-location")
+                // TODO: CarLocationActivity later
+                toast("Car location screen coming soon.")
+            }
+            "mrtf://sos" -> {
+                Log.i(TAG, "Route: sos")
+                startActivity(Intent(this, SosActivity::class.java))
+            }
+            "mrtf://openapp" -> {
+                Log.i(TAG, "Route: openapp")
+                // For now, we're already in MainActivity; later you can show a dashboard
+                toast("MRTF app opened from tag.")
+            }
+            else -> {
+                toast("Unknown MRTF action: $action")
+                Log.w(TAG, "Unknown MRTF action: $action")
+            }
         }
     }
 
