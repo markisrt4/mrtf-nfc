@@ -23,7 +23,7 @@
         android:allowBackup="true"
         android:label="MRTF NFC"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MRTFNFC">
+        android:theme="@style/Theme.MRTFApp">
 
         <!-- ===================== -->
         <!-- MAIN / NFC ENTRY -->
