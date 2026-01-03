@@ -1,6 +1,9 @@
 package com.mrtechforge.mrtfnfc
 
 import com.mrtechforge.mrtfnfc.actions.*
+import com.mrtechforge.mrtfnfc.debug.DebugConfig
+import com.mrtechforge.mrtfnfc.debug.DebugPayloadActivity
+
 import android.app.PendingIntent
 import android.content.Intent
 import android.nfc.NdefMessage
@@ -15,7 +18,6 @@ import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,7 +25,9 @@ class MainActivity : AppCompatActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
     private var pendingIntent: PendingIntent? = null
-    private var tagPayload: ByteArray? = null   // non-null = WRITE MODE
+
+    // non-null = WRITE MODE
+    private var tagPayload: ByteArray? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,55 +55,71 @@ class MainActivity : AppCompatActivity() {
             flags
         )
 
-        // --- Writer buttons ---
+        // --------------------------------------------------
+        // Writer buttons
+        // --------------------------------------------------
+
         findViewById<Button>(R.id.btnWifi).setOnClickListener {
-            tagPayload = buildPayload("wifi-toggle")
+            tagPayload = "mrtf://wifi-toggle".toByteArray()
             toast("Ready to write Wi-Fi Toggle tag")
         }
 
         findViewById<Button>(R.id.btnBluetooth).setOnClickListener {
-            tagPayload = buildPayload("bt-toggle")
+            tagPayload = "mrtf://bt-toggle".toByteArray()
             toast("Ready to write Bluetooth Toggle tag")
         }
 
         findViewById<Button>(R.id.btnDND).setOnClickListener {
-            tagPayload = buildPayload("dnd")
+            tagPayload = "mrtf://dnd".toByteArray()
             toast("Ready to write DND tag")
         }
 
         findViewById<Button>(R.id.btnCarLocation).setOnClickListener {
-            tagPayload = buildPayload("car-location")
+            tagPayload = "mrtf://car-location".toByteArray()
             toast("Ready to write Car Location tag")
         }
 
         findViewById<Button>(R.id.btnSOSText).setOnClickListener {
-            tagPayload = buildPayload("sos")
+            tagPayload = "mrtf://sos".toByteArray()
             toast("Ready to write SOS tag")
         }
 
         findViewById<Button>(R.id.btnBedtime).setOnClickListener {
-            tagPayload = buildPayload("bedtime")
+            tagPayload = "mrtf://bedtime".toByteArray()
             toast("Ready to write Bedtime tag")
         }
 
-        findViewById<Button>(R.id.btnOpenApp).setOnClickListener {
-            tagPayload = buildPayload("openapp")
+        val openBtn = findViewById<Button>(R.id.btnOpenApp)
+        openBtn.setOnClickListener {
+            tagPayload = "mrtf://openapp".toByteArray()
             toast("Ready to write App Launcher tag")
+        }
+
+        // --------------------------------------------------
+        // DEBUG TOGGLE (long-press, intentional)
+        // --------------------------------------------------
+        openBtn.setOnLongClickListener {
+            DebugConfig.ENABLED = !DebugConfig.ENABLED
+            toast("Debug mode: ${if (DebugConfig.ENABLED) "ON" else "OFF"}")
+            true
         }
     }
 
     override fun onResume() {
         super.onResume()
+        Log.d(TAG, "onResume: enabling foreground dispatch")
         nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null)
     }
 
     override fun onPause() {
         super.onPause()
+        Log.d(TAG, "onPause: disabling foreground dispatch")
         nfcAdapter?.disableForegroundDispatch(this)
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+        Log.d(TAG, "onNewIntent: $intent")
 
         val tag = intent?.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
         if (tag == null) {
@@ -108,29 +128,25 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (tagPayload != null) {
-            writeNdefToTag(tag, tagPayload!!)
+            // ---------------- WRITE MODE ----------------
+            val payload = tagPayload!!
+            val record = NdefRecord.createMime("text/plain", payload)
+            val message = NdefMessage(arrayOf(record))
+            writeNdefToTag(tag, message)
         } else {
+            // ---------------- READ MODE ----------------
             readAndRouteTag(tag)
         }
     }
 
-    // ---------- PAYLOAD LAYER ----------
+    // --------------------------------------------------
+    // WRITE HELPERS
+    // --------------------------------------------------
 
-    private fun buildPayload(action: String): ByteArray {
-        val json = JSONObject()
-        json.put("version", 1)
-        json.put("action", action)
-        return json.toString().toByteArray(Charsets.UTF_8)
-    }
-
-    // ---------- WRITE ----------
-
-    private fun writeNdefToTag(tag: Tag, payload: ByteArray) {
+    private fun writeNdefToTag(tag: Tag, message: NdefMessage) {
         try {
-            val record = NdefRecord.createMime("text/plain", payload)
-            val message = NdefMessage(arrayOf(record))
-
             val ndef = Ndef.get(tag)
+
             if (ndef != null) {
                 ndef.connect()
 
@@ -149,28 +165,29 @@ class MainActivity : AppCompatActivity() {
                 ndef.writeNdefMessage(message)
                 ndef.close()
 
+                toast("Tag written successfully.")
+                tagPayload = null
             } else {
                 val format = NdefFormatable.get(tag)
                 if (format != null) {
                     format.connect()
                     format.format(message)
                     format.close()
+                    toast("Tag formatted + written.")
+                    tagPayload = null
                 } else {
                     toast("Tag does not support NDEF.")
-                    return
                 }
             }
-
-            toast("Tag written successfully.")
-            tagPayload = null
-
         } catch (e: Exception) {
             toast("Write failed: ${e.message}")
             Log.e(TAG, "Write error", e)
         }
     }
 
-    // ---------- READ + ROUTE ----------
+    // --------------------------------------------------
+    // READ + ROUTER
+    // --------------------------------------------------
 
     private fun readAndRouteTag(tag: Tag) {
         try {
@@ -189,18 +206,16 @@ class MainActivity : AppCompatActivity() {
             }
 
             val record = message.records[0]
-            if (record.tnf != NdefRecord.TNF_MIME_MEDIA ||
-                String(record.type) != "text/plain"
-            ) {
-                toast("Not an MRTF tag.")
-                return
+            val actionString = String(record.payload, Charsets.UTF_8)
+
+            // ---------------- DEBUG VIEW ----------------
+            if (DebugConfig.ENABLED) {
+                val dbg = Intent(this, DebugPayloadActivity::class.java)
+                dbg.putExtra("payload", actionString)
+                startActivity(dbg)
             }
 
-            val json = JSONObject(String(record.payload, Charsets.UTF_8))
-            val action = json.getString("action")
-
-            Log.i(TAG, "Routing action: $action")
-            routeMrtfAction(action)
+            routeMrtfAction(actionString)
 
         } catch (e: Exception) {
             toast("Read failed: ${e.message}")
@@ -210,13 +225,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun routeMrtfAction(action: String) {
         when (action) {
-            "wifi-toggle" -> startActivity(Intent(this, WifiActionActivity::class.java))
-            "bt-toggle" -> startActivity(Intent(this, BluetoothActionActivity::class.java))
-            "dnd", "bedtime" -> startActivity(Intent(this, BedtimeActionActivity::class.java))
-            "car-location" -> toast("Car location coming soon.")
-            "sos" -> startActivity(Intent(this, SosActivity::class.java))
-            "openapp" -> toast("MRTF app opened from tag.")
-            else -> toast("Unknown MRTF action: $action")
+            "mrtf://wifi-toggle" -> {
+                startActivity(Intent(this, WifiActionActivity::class.java))
+            }
+            "mrtf://bt-toggle" -> {
+                startActivity(Intent(this, BluetoothActionActivity::class.java))
+            }
+            "mrtf://dnd", "mrtf://bedtime" -> {
+                startActivity(Intent(this, BedtimeActionActivity::class.java))
+            }
+            "mrtf://sos" -> {
+                startActivity(Intent(this, SosActivity::class.java))
+            }
+            "mrtf://openapp" -> {
+                toast("MRTF opened from tag.")
+            }
+            else -> {
+                toast("Unknown MRTF action: $action")
+            }
         }
     }
 
