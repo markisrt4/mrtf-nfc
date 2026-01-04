@@ -1,13 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:padding="16dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/mrtf_background"
+    android:padding="24dp">
 
-    <TextView
-        android:id="@+id/txtDebug"
-        android:textSize="14sp"
-        android:typeface="monospace"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:text="Debug Payload Viewer"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/mrtf_on_surface"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:text="Raw Payload:"
+            android:textStyle="bold"
+            android:textColor="@color/mrtf_on_surface" />
+
+        <TextView
+            android:id="@+id/txtRawPayload"
+            android:textColor="@color/mrtf_button_border"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:text="Parsed Action:"
+            android:textStyle="bold"
+            android:textColor="@color/mrtf_on_surface" />
+
+        <TextView
+            android:id="@+id/txtParsedAction"
+            android:textColor="@color/mrtf_button_border"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:text="Timestamp:"
+            android:textStyle="bold"
+            android:textColor="@color/mrtf_on_surface" />
+
+        <TextView
+            android:id="@+id/txtTimestamp"
+            android:textColor="@color/mrtf_button_border" />
+    </LinearLayout>
 </ScrollView>
