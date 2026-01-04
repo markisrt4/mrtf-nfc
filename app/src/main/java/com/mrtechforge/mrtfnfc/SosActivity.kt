@@ -1,39 +1,31 @@
-package com.mrtechforge.mrtfnfc
+package com.mrtechforge.mrtfnfc.actions
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.mrtechforge.mrtfnfc.R
 
 class SosActivity : AppCompatActivity() {
-
-    // TODO: make this configurable later
-    private val sosPhoneNumber = "1234567890"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sos)
 
-        val btn = findViewById<Button>(R.id.btnPrepareSosText)
+        findViewById<Button>(R.id.btnSendSos).setOnClickListener {
+            sendSos()
+        }
+    }
 
-        btn.setOnClickListener {
-            // TODO: add real location link later
-            val message = "SOS – I need help. (Location will be added in a future version.)"
+    private fun sendSos() {
+        val message = "SOS! I need help. Sent via MRTF NFC."
 
-            val uri = Uri.parse("smsto:$sosPhoneNumber")
-            val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
-                putExtra("sms_body", message)
-            }
-
-            try {
-                startActivity(intent)
-            } catch (e: Exception) {
-                Toast.makeText(this, "No SMS app available.", Toast.LENGTH_SHORT).show()
-            }
+        val intent = Intent(Intent.ACTION_SENDTO).apply {
+            data = Uri.parse("smsto:")
+            putExtra("sms_body", message)
         }
 
-        Toast.makeText(this, "SOS tag scanned", Toast.LENGTH_SHORT).show()
+        startActivity(intent)
     }
 }
