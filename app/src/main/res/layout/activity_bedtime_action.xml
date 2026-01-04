@@ -1,33 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/mrtf_background"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="24dp">
+    android:padding="24dp"
+    tools:context=".actions.BedtimeActionActivity">
 
     <TextView
+        android:id="@+id/txtDndTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Bedtime / DND tag"
-        android:textColor="@color/mrtf_on_surface"
+        android:text="Do Not Disturb"
         android:textStyle="bold"
-        android:textSize="20sp"
-        android:paddingBottom="8dp" />
+        android:textSize="22sp"
+        android:textColor="@color/mrtf_on_surface"
+        android:paddingBottom="12dp" />
 
     <TextView
+        android:id="@+id/txtDndStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Later, this will enable your bedtime routine and DND."
-        android:textColor="@color/mrtf_button_border"
-        android:textSize="14sp"
+        android:text="Checking status…"
+        android:textSize="16sp"
+        android:textColor="@color/mrtf_on_surface"
         android:paddingBottom="24dp" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnBedtimeAction"
+        android:id="@+id/btnToggleDnd"
         style="?attr/materialButtonStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Run bedtime action (stub)" />
+        android:text="Toggle Do Not Disturb"
+        android:padding="12dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnGrantDndAccess"
+        style="?attr/materialButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Grant DND Access"
+        android:padding="12dp"
+        android:layout_marginTop="16dp" />
+
 </LinearLayout>
