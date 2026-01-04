@@ -3,6 +3,7 @@ package com.mrtechforge.mrtfnfc.actions
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -11,20 +12,35 @@ import com.mrtechforge.mrtfnfc.R
 
 class BluetoothActionActivity : AppCompatActivity() {
 
-    private val btAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-
     private lateinit var txtStatus: TextView
-    private lateinit var btnToggle: Button
+    private lateinit var btnAction: Button
+
+    private val bluetoothAdapter: BluetoothAdapter? =
+        BluetoothAdapter.getDefaultAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bluetooth_action)
 
-        txtStatus = findViewById(R.id.txtBtStatus)
-        btnToggle = findViewById(R.id.btnToggleBluetooth)
+        txtStatus = findViewById(R.id.txtStatus)
+        btnAction = findViewById(R.id.btnToggle)
 
-        btnToggle.setOnClickListener {
-            toggleBluetoothHybrid()
+        if (bluetoothAdapter == null) {
+            txtStatus.text = "Bluetooth not supported on this device."
+            btnAction.isEnabled = false
+            return
+        }
+
+        refreshStatus()
+
+        btnAction.setOnClickListener {
+            if (bluetoothAdapter.isEnabled) {
+                Toast.makeText(this, "Bluetooth already ON", Toast.LENGTH_SHORT).show()
+                refreshStatus()
+            } else {
+                // Hybrid: open OS dialog
+                startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
+            }
         }
     }
 
@@ -34,35 +50,13 @@ class BluetoothActionActivity : AppCompatActivity() {
     }
 
     private fun refreshStatus() {
-        if (btAdapter == null) {
-            txtStatus.text = "Bluetooth not supported"
-            btnToggle.isEnabled = false
-            return
-        }
-
+        val enabled = bluetoothAdapter?.isEnabled == true
         txtStatus.text =
-            if (btAdapter.isEnabled)
-                "Bluetooth is ENABLED"
-            else
-                "Bluetooth is DISABLED"
-    }
+            if (enabled) "Bluetooth is ON ✅"
+            else "Bluetooth is OFF ❌"
 
-    private fun toggleBluetoothHybrid() {
-        if (btAdapter == null) {
-            Toast.makeText(this, "Bluetooth not supported", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        if (btAdapter.isEnabled) {
-            Toast.makeText(
-                this,
-                "Android does not allow disabling Bluetooth directly",
-                Toast.LENGTH_LONG
-            ).show()
-
-            startActivity(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS))
-        } else {
-            startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-        }
+        btnAction.text =
+            if (enabled) "Bluetooth Enabled"
+            else "Enable Bluetooth"
     }
 }
