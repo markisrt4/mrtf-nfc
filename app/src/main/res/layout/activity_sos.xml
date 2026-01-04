@@ -8,26 +8,15 @@
     android:padding="24dp">
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SOS tag"
-        android:textColor="@color/mrtf_on_surface"
-        android:textStyle="bold"
+        android:text="Emergency SOS"
         android:textSize="20sp"
-        android:paddingBottom="8dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="This will open your SMS app with a pre-filled SOS message."
-        android:textColor="@color/mrtf_button_border"
-        android:textSize="14sp"
-        android:paddingBottom="24dp" />
+        android:textStyle="bold"
+        android:textColor="@color/mrtf_on_surface"
+        android:paddingBottom="16dp" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnPrepareSosText"
-        style="?attr/materialButtonStyle"
+        android:id="@+id/btnSendSos"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Prepare SOS text" />
+        android:text="Send SOS Message" />
 </LinearLayout>
