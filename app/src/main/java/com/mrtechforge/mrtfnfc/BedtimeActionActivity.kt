@@ -13,30 +13,33 @@ import com.mrtechforge.mrtfnfc.R
 
 class BedtimeActionActivity : AppCompatActivity() {
 
-    private lateinit var notificationManager: NotificationManager
     private lateinit var txtStatus: TextView
-    private lateinit var btnToggle: Button
-    private lateinit var btnGrantAccess: Button
+    private lateinit var btnAction: Button
+
+    private lateinit var notificationManager: NotificationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_bedtime_action)
 
+        txtStatus = findViewById(R.id.txtStatus)
+        btnAction = findViewById(R.id.btnToggle)
+
         notificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        txtStatus = findViewById(R.id.txtDndStatus)
-        btnToggle = findViewById(R.id.btnToggleDnd)
-        btnGrantAccess = findViewById(R.id.btnGrantDndAccess)
+        refreshStatus()
 
-        btnToggle.setOnClickListener {
-            toggleDnd()
-        }
-
-        btnGrantAccess.setOnClickListener {
-            startActivity(
-                Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
-            )
+        btnAction.setOnClickListener {
+            if (!notificationManager.isNotificationPolicyAccessGranted) {
+                // Permission required
+                Toast.makeText(this, "Grant DND permission", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+            } else {
+                // Hybrid confirmation only — Android controls the toggle
+                Toast.makeText(this, "You can now enable Bedtime / DND", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(Settings.ACTION_DND_SETTINGS))
+            }
         }
     }
 
@@ -46,44 +49,14 @@ class BedtimeActionActivity : AppCompatActivity() {
     }
 
     private fun refreshStatus() {
-        if (!notificationManager.isNotificationPolicyAccessGranted) {
-            txtStatus.text = "DND access not granted"
-            btnToggle.isEnabled = false
-            btnGrantAccess.isEnabled = true
-            return
-        }
+        val granted = notificationManager.isNotificationPolicyAccessGranted
 
-        btnGrantAccess.isEnabled = false
-        btnToggle.isEnabled = true
+        txtStatus.text =
+            if (granted) "DND permission granted ✅"
+            else "DND permission NOT granted ❌"
 
-        val isEnabled =
-            notificationManager.currentInterruptionFilter ==
-                    NotificationManager.INTERRUPTION_FILTER_NONE
-
-        txtStatus.text = if (isEnabled) {
-            "Do Not Disturb is ENABLED"
-        } else {
-            "Do Not Disturb is DISABLED"
-        }
-    }
-
-    private fun toggleDnd() {
-        if (!notificationManager.isNotificationPolicyAccessGranted) {
-            Toast.makeText(this, "Grant DND access first", Toast.LENGTH_LONG).show()
-            return
-        }
-
-        val enabled =
-            notificationManager.currentInterruptionFilter ==
-                    NotificationManager.INTERRUPTION_FILTER_NONE
-
-        notificationManager.setInterruptionFilter(
-            if (enabled)
-                NotificationManager.INTERRUPTION_FILTER_ALL
-            else
-                NotificationManager.INTERRUPTION_FILTER_NONE
-        )
-
-        refreshStatus()
+        btnAction.text =
+            if (granted) "Open Bedtime / DND Settings"
+            else "Grant DND Permission"
     }
 }
