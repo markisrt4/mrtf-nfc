@@ -1,7 +1,5 @@
 package com.mrtechforge.mrtfnfc.debug
 
-import android.nfc.NdefMessage
-import android.nfc.NdefRecord
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -13,23 +11,12 @@ class DebugPayloadActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_debug_payload)
 
-        val textView = findViewById<TextView>(R.id.txtDebug)
+        val txtPayload = findViewById<TextView>(R.id.txtRawPayload)
+        val txtAction = findViewById<TextView>(R.id.txtParsedAction)
+        val txtTimestamp = findViewById<TextView>(R.id.txtTimestamp)
 
-        val payload = intent.getStringExtra("payload") ?: "<none>"
-        val tnf = intent.getShortExtra("tnf", -1)
-        val type = intent.getStringExtra("type") ?: "<none>"
-
-        textView.text = """
-            MRTF DEBUG VIEWER
-            
-            Payload:
-            $payload
-            
-            TNF:
-            $tnf
-            
-            Type:
-            $type
-        """.trimIndent()
+        txtPayload.text = intent.getStringExtra("raw_payload") ?: "N/A"
+        txtAction.text = intent.getStringExtra("parsed_action") ?: "N/A"
+        txtTimestamp.text = intent.getStringExtra("timestamp") ?: "N/A"
     }
 }
