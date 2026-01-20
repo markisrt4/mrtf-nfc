@@ -3,6 +3,7 @@ package com.mrtechforge.mrtfnfc.actions
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
@@ -15,7 +16,6 @@ class BedtimeActionActivity : AppCompatActivity() {
 
     private lateinit var txtStatus: TextView
     private lateinit var btnAction: Button
-
     private lateinit var notificationManager: NotificationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,9 +36,16 @@ class BedtimeActionActivity : AppCompatActivity() {
                 Toast.makeText(this, "Grant DND permission", Toast.LENGTH_SHORT).show()
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
             } else {
-                // Hybrid confirmation only — Android controls the toggle
-                Toast.makeText(this, "You can now enable Bedtime / DND", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(Settings.ACTION_DND_SETTINGS))
+                // Open DND / Bedtime settings
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    startActivity(Intent("android.settings.ZEN_MODE_SETTINGS"))
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Bedtime/DND settings not available on this Android version",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }

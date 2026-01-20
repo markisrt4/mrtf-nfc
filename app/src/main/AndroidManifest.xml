@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- ===================== -->
-    <!-- DND Mode-->
+    <!-- DND Mode -->
     <!-- ===================== -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
@@ -19,7 +19,6 @@
     <!-- ===================== -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-
     <!-- Android 12+ -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
@@ -30,32 +29,50 @@
         android:theme="@style/Theme.MRTFApp">
 
         <!-- ===================== -->
-        <!-- MAIN / NFC ENTRY -->
+        <!-- MAIN + LAUNCHER + NFC ENTRY -->
         <!-- ===================== -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop">
 
+            <!-- App drawer icon -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
             <!-- Let Android route NFC intents -->
             <intent-filter android:priority="0">
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="*/*" />
+                <data android:mimeType="application/vnd.mrtechforge.mrtf" />
             </intent-filter>
 
+            <!-- Required for TECH_DISCOVERED routing -->
             <intent-filter android:priority="0">
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
+            <meta-data
+                android:name="android.nfc.action.TECH_DISCOVERED"
+                android:resource="@xml/nfc_tech_filter" />
 
         </activity>
 
         <!-- ===================== -->
-        <!-- BLUETOOTH ACTION -->
+        <!-- ACTION SCREENS -->
         <!-- ===================== -->
-        <activity
-            android:name=".actions.BluetoothActionActivity"
-            android:exported="false" />
+        <activity android:name=".WifiActionActivity" android:exported="false" />
+        <activity android:name=".BedtimeActionActivity" android:exported="false" />
+        <activity android:name=".BluetoothActionActivity" android:exported="false" />
+        <activity android:name=".SosActivity" android:exported="false" />
+
+        <!-- ===================== -->
+        <!-- DEBUG -->
+        <!-- ===================== -->
+        <activity android:name=".debug.DebugPayloadActivity" android:exported="false" />
 
     </application>
 </manifest>
