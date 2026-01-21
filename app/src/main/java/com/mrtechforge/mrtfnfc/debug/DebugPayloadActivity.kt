@@ -23,8 +23,6 @@ class DebugPayloadActivity : AppCompatActivity() {
 
         // Optional: add these buttons to your layout (recommended).
         // If you don't have them yet, just comment out these 2 lines and the click listeners.
-        val btnCopyRaw = findViewById<Button>(R.id.btnCopyRaw)
-        val btnCopyDecoded = findViewById<Button>(R.id.btnCopyDecoded)
 
         val rawPayload = intent.getStringExtra("raw_payload") ?: ""
         val parsedAction = intent.getStringExtra("parsed_action") ?: "N/A"
