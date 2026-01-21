@@ -27,7 +27,9 @@ class MainActivity : AppCompatActivity() {
 
     private val MRTF_MIME = "application/mrtf"
     private val MRTF_MIME_LEGACY = "application/vnd.mrtechforge.mrtf"
-    // TODO: update this later.
+
+    // If user doesn't have the app, scanning the tag should open this page
+    // (replace with your real landing page or Play Store link later)
     private val INSTALL_URL = "https://mrtechforge.com/mrtf-nfc"
 
     private var nfcAdapter: NfcAdapter? = null
@@ -77,37 +79,37 @@ class MainActivity : AppCompatActivity() {
 
         // Writer buttons (match your activity_main.xml IDs)
         findViewById<Button>(R.id.btnWifi).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.WIFI_TOGGLE)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.WIFI_TOGGLE, includeCrc = true)
             toast("Ready to write MRTF Wi-Fi tag")
         }
 
         findViewById<Button>(R.id.btnBluetooth).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.BT_TOGGLE)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.BT_TOGGLE, includeCrc = true)
             toast("Ready to write MRTF Bluetooth tag")
         }
 
         findViewById<Button>(R.id.btnDND).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.DND)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.DND, includeCrc = true)
             toast("Ready to write MRTF DND tag")
         }
 
         findViewById<Button>(R.id.btnCarLocation).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.CAR_LOCATION)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.CAR_LOCATION, includeCrc = true)
             toast("Ready to write MRTF Car Location tag")
         }
 
         findViewById<Button>(R.id.btnSOSText).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.SOS)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.SOS, includeCrc = true)
             toast("Ready to write MRTF SOS tag")
         }
 
         findViewById<Button>(R.id.btnBedtime).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.BEDTIME)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.BEDTIME, includeCrc = true)
             toast("Ready to write MRTF Bedtime tag")
         }
 
         findViewById<Button>(R.id.btnOpenApp).setOnClickListener {
-            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.OPEN_APP)
+            pendingWriteFrame = MrtfProtocolV1.buildCommandFrame(Cmd.OPEN_APP, includeCrc = true)
             toast("Ready to write MRTF Open App tag")
         }
 
@@ -154,30 +156,29 @@ class MainActivity : AppCompatActivity() {
 
     // ---------------- WRITE ----------------
 
+    /**
+     * Best-practice record order:
+     *  1) URI (install page) -> helps when app isn't installed
+     *  2) MIME (application/mrtf) -> your binary MRTF payload
+     *  3) AAR -> prefers your app when installed
+     *  4) TEXT (optional) -> human readable
+     */
     private fun buildNdefMessageForMrtf(frame: ByteArray): NdefMessage {
-        // 1) Install/landing page for users who don't have the app
         val uriRecord = NdefRecord.createUri(INSTALL_URL)
-
-        // 2) Your MRTF binary record
         val mrtfRecord = NdefRecord.createMime(MRTF_MIME, frame)
-
-        // 3) AAR makes Android strongly prefer your app when installed
         val aarRecord = NdefRecord.createApplicationRecord(packageName)
 
-        // Optional: keep a human-readable text record (nice for generic NFC readers)
-        val fallbackText =
-            "MRTF tag detected. Install MRTF NFC: $INSTALL_URL"
+        val fallbackText = "MRTF tag detected. Install MRTF NFC: $INSTALL_URL"
         val textRecord = createTextRecord(lang = "en", text = fallbackText)
 
-        // Recommended order: URI -> MIME -> AAR -> TEXT
         return NdefMessage(arrayOf(uriRecord, mrtfRecord, aarRecord, textRecord))
     }
-
 
     private fun createTextRecord(lang: String, text: String): NdefRecord {
         val langBytes = lang.toByteArray(Charsets.US_ASCII)
         val textBytes = text.toByteArray(Charsets.UTF_8)
 
+        // [status][lang][text]
         val payload = ByteArray(1 + langBytes.size + textBytes.size)
         payload[0] = (langBytes.size and 0x3F).toByte()
         System.arraycopy(langBytes, 0, payload, 1, langBytes.size)
@@ -251,7 +252,7 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            // 1) Prefer MRTF binary record
+            // Prefer MRTF binary record
             val mrtfRecord = message.records.firstOrNull { r ->
                 r.tnf == NdefRecord.TNF_MIME_MEDIA &&
                     (String(r.type, Charsets.US_ASCII) == MRTF_MIME ||
@@ -260,51 +261,32 @@ class MainActivity : AppCompatActivity() {
 
             if (mrtfRecord != null) {
                 val frame = mrtfRecord.payload
-                val parsed = MrtfProtocolV1.parse(frame)
+                val parsedNullable = MrtfProtocolV1.parse(frame)
 
+                if (parsedNullable == null) {
+                    toast("Read failed: Invalid MRTF frame")
+                    return
+                }
+                val parsed = parsedNullable // non-null alias
+
+                // CRC enforcement (only when present)
                 if (parsed.crcPresent && parsed.crcValid == false) {
                     toast("Read failed: checksum mismatch")
                     if (isDebugEnabled()) {
-                        val hex = frame.joinToString(" ") { b -> "%02X".format(b) }
-                        startActivity(
-                            Intent(this, DebugPayloadActivity::class.java).apply {
-                                putExtra("raw_payload", hex)
-                                putExtra("parsed_action", "CRC INVALID (expected=${parsed.crcExpected} computed=${parsed.crcComputed})")
-                                putExtra("timestamp", System.currentTimeMillis().toString())
-                            }
-                        )
+                        openDebug(frame, parsed, extra = "CRC INVALID")
                     }
-                    return
-            }
-
-                if (parsed == null) {
-                    toast("Read failed: Invalid MRTF frame")
                     return
                 }
 
                 if (isDebugEnabled()) {
-                    val hex = frame.joinToString(" ") { b -> "%02X".format(b) }
-                    startActivity(
-                        Intent(this, DebugPayloadActivity::class.java).apply {
-                            putExtra("raw_payload", hex)
-                            putExtra(
-                                "parsed_action",
-                                "TYPE=0x%02X FLAGS=0x%02X CMD=%s".format(
-                                    parsed.type,
-                                    parsed.flags,
-                                    parsed.commandId?.let { "0x%02X".format(it) } ?: "null"
-                                )
-                            )
-                            putExtra("timestamp", System.currentTimeMillis().toString())
-                        }
-                    )
+                    openDebug(frame, parsed, extra = null)
                 }
 
                 routeCommandId(parsed.commandId)
                 return
             }
 
-            // 2) Legacy: text/plain MIME record containing "mrtf://..."
+            // Legacy: text/plain MIME record containing "mrtf://..."
             val legacyRecord = message.records.firstOrNull { r ->
                 r.tnf == NdefRecord.TNF_MIME_MEDIA &&
                     String(r.type, Charsets.US_ASCII) == "text/plain"
@@ -321,6 +303,34 @@ class MainActivity : AppCompatActivity() {
             toast("Read failed: ${e.message}")
             Log.e(TAG, "Read error", e)
         }
+    }
+
+    private fun openDebug(frame: ByteArray, parsed: MrtfProtocolV1.ParsedFrame, extra: String?) {
+        val hex = frame.joinToString(" ") { b -> "%02X".format(b) }
+
+        val cmd = parsed.commandId?.let { "0x%02X".format(it) } ?: "null"
+        val crcLine = if (parsed.crcPresent) {
+            val exp = parsed.crcExpected?.let { "0x%04X".format(it) } ?: "null"
+            val comp = parsed.crcComputed?.let { "0x%04X".format(it) } ?: "null"
+            val ok = if (parsed.crcValid == true) "VALID" else "INVALID"
+            " CRC=$ok exp=$exp comp=$comp"
+        } else {
+            " CRC=(none)"
+        }
+
+        val summary = buildString {
+            append("TYPE=0x%02X FLAGS=0x%02X CMD=%s".format(parsed.type, parsed.flags, cmd))
+            append(crcLine)
+            if (!extra.isNullOrBlank()) append(" [$extra]")
+        }
+
+        startActivity(
+            Intent(this, DebugPayloadActivity::class.java).apply {
+                putExtra("raw_payload", hex)
+                putExtra("parsed_action", summary)
+                putExtra("timestamp", System.currentTimeMillis().toString())
+            }
+        )
     }
 
     private fun routeCommandId(commandId: Int?) {
