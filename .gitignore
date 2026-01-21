@@ -35,3 +35,8 @@ google-services.json
 *.hprof
 nfc_tag_app_src.tar
 nfc_tag_app_src.tar
+
+# Large artifacts
+*.tar
+*.tar.gz
+*.tgz
