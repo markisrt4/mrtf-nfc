@@ -19,8 +19,7 @@ For TYPE=COMMAND:
 
 Optional integrity:
   0xFE CRC16-CCITT-FALSE (2 bytes, big-endian)
-  - CRC is computed over: [HEADER (7 bytes)] + [PAYLOAD TLVs EXCLUDING the CRC TLV itself]
-  - Header LEN is the actual payload length including the CRC TLV if present
+  CRC computed over: [HEADER (7 bytes)] + [PAYLOAD TLVs EXCLUDING the CRC TLV]
 */
 object MrtfProtocolV1 {
     private const val MAGIC0: Byte = 0x4D // 'M'
@@ -31,8 +30,6 @@ object MrtfProtocolV1 {
 
     private const val FIELD_COMMAND_ID: Int = 0x10
     private const val FIELD_COMMAND_VALUE: Int = 0x11
-
-    // Optional checksum field (TLV)
     private const val FIELD_CRC16: Int = 0xFE
 
     data class ParsedTlv(
@@ -51,8 +48,8 @@ object MrtfProtocolV1 {
         val tlvs: List<ParsedTlv>,
         val crcPresent: Boolean,
         val crcValid: Boolean?,      // null if no CRC present
-        val crcExpected: Int?,       // from tag, null if none
-        val crcComputed: Int?        // computed, null if none
+        val crcExpected: Int?,       // from tag
+        val crcComputed: Int?        // computed
     )
 
     fun parse(frame: ByteArray): ParsedFrame? {
@@ -71,32 +68,23 @@ object MrtfProtocolV1 {
         val payloadStart = 7
         val payloadEnd = payloadStart + length
 
-        // Parse TLVs (keep list for debug UI)
         val tlvs = parseTlvs(frame, payloadStart, payloadEnd) ?: return null
 
-        // Extract command fields
         var cmdId: Int? = null
         var cmdVal: ByteArray? = null
-
-        // Extract CRC field (if any)
         var crcExpected: Int? = null
 
         for (t in tlvs) {
             when (t.fieldId) {
                 FIELD_COMMAND_ID -> if (t.length == 1) cmdId = t.value[0].toInt() and 0xFF
                 FIELD_COMMAND_VALUE -> cmdVal = t.value
-                FIELD_CRC16 -> {
-                    if (t.length == 2) {
-                        crcExpected = ((t.value[0].toInt() and 0xFF) shl 8) or (t.value[1].toInt() and 0xFF)
-                    }
+                FIELD_CRC16 -> if (t.length == 2) {
+                    crcExpected = ((t.value[0].toInt() and 0xFF) shl 8) or (t.value[1].toInt() and 0xFF)
                 }
             }
         }
 
         val crcPresent = (crcExpected != null)
-
-        // Validate CRC if present:
-        // compute over header + payload excluding the CRC TLV itself
         val crcComputed = if (crcPresent) {
             val header = frame.copyOfRange(0, 7)
             val payloadWithoutCrc = buildPayloadExcludingField(tlvs, FIELD_CRC16)
@@ -120,11 +108,6 @@ object MrtfProtocolV1 {
         )
     }
 
-    /**
-     * Builds a COMMAND frame.
-     *
-     * If includeCrc=true, appends TLV 0xFE with CRC16-CCITT-FALSE (2 bytes big-endian).
-     */
     fun buildCommandFrame(
         commandId: Int,
         commandValue: ByteArray? = null,
@@ -148,12 +131,12 @@ object MrtfProtocolV1 {
             payload.addAll(commandValue.toList())
         }
 
-        // (Optional) CRC TLV placeholder. We'll compute after header+payload is known.
+        // CRC TLV placeholder
         if (includeCrc) {
             payload.add(FIELD_CRC16.toByte())
             payload.add(0x02)
-            payload.add(0x00) // placeholder hi
-            payload.add(0x00) // placeholder lo
+            payload.add(0x00)
+            payload.add(0x00)
         }
 
         val payloadBytes = payload.toByteArray()
@@ -169,17 +152,14 @@ object MrtfProtocolV1 {
             (len and 0xFF).toByte()
         )
 
-        if (!includeCrc) {
-            return header + payloadBytes
-        }
+        if (!includeCrc) return header + payloadBytes
 
-        // Compute CRC over header + payload WITHOUT the CRC TLV itself
+        // Compute CRC over header + payload excluding CRC TLV
         val tlvs = parseTlvs(payloadBytes, 0, payloadBytes.size) ?: return header + payloadBytes
         val payloadWithoutCrc = buildPayloadExcludingField(tlvs, FIELD_CRC16)
         val crc = crc16CcittFalse(header + payloadWithoutCrc)
 
-        // Patch CRC into payloadBytes (find CRC TLV)
-        // payloadBytes structure: ... [0xFE][0x02][hi][lo]
+        // Patch CRC bytes in payload
         var i = 0
         while (i + 2 <= payloadBytes.size) {
             val fieldId = payloadBytes[i].toInt() and 0xFF
@@ -196,25 +176,18 @@ object MrtfProtocolV1 {
         return header + payloadBytes
     }
 
-    // ---------------- TLV PARSING HELPERS ----------------
-
     private fun parseTlvs(buf: ByteArray, start: Int, end: Int): List<ParsedTlv>? {
         var i = start
         val out = ArrayList<ParsedTlv>()
-
         while (i + 2 <= end) {
             val fieldId = buf[i].toInt() and 0xFF
             val len = buf[i + 1].toInt() and 0xFF
             i += 2
-
             if (i + len > end) return null
             val value = buf.copyOfRange(i, i + len)
             i += len
-
             out.add(ParsedTlv(fieldId, len, value))
         }
-
-        // If we ended mid-TLV header, it's malformed
         if (i != end) return null
         return out
     }
@@ -230,25 +203,16 @@ object MrtfProtocolV1 {
         return out.toByteArray()
     }
 
-    // ---------------- CRC16 CCITT-FALSE ----------------
-    // Polynomial: 0x1021
-    // Init: 0xFFFF
-    // XOROUT: 0x0000
-    // RefIn/RefOut: false
+    // CRC16-CCITT-FALSE: poly 0x1021, init 0xFFFF, xorout 0x0000, refin/refout false
     private fun crc16CcittFalse(data: ByteArray): Int {
         var crc = 0xFFFF
         for (b in data) {
             crc = crc xor ((b.toInt() and 0xFF) shl 8)
             for (i in 0 until 8) {
-                crc = if ((crc and 0x8000) != 0) {
-                    ((crc shl 1) xor 0x1021)
-                } else {
-                    (crc shl 1)
-                }
+                crc = if ((crc and 0x8000) != 0) ((crc shl 1) xor 0x1021) else (crc shl 1)
                 crc = crc and 0xFFFF
             }
         }
         return crc and 0xFFFF
     }
-}
 }
