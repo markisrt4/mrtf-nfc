@@ -251,3 +251,4 @@ object MrtfProtocolV1 {
         return crc and 0xFFFF
     }
 }
+}

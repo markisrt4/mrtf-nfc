@@ -155,14 +155,24 @@ class MainActivity : AppCompatActivity() {
     // ---------------- WRITE ----------------
 
     private fun buildNdefMessageForMrtf(frame: ByteArray): NdefMessage {
-        val fallbackText =
-            "MRTF tag detected. Install/launch the MRTF NFC app to perform the action."
+        // 1) Install/landing page for users who don't have the app
+        val uriRecord = NdefRecord.createUri(INSTALL_URL)
 
-        val textRecord = createTextRecord(lang = "en", text = fallbackText)
+        // 2) Your MRTF binary record
         val mrtfRecord = NdefRecord.createMime(MRTF_MIME, frame)
 
-        return NdefMessage(arrayOf(textRecord, mrtfRecord))
+        // 3) AAR makes Android strongly prefer your app when installed
+        val aarRecord = NdefRecord.createApplicationRecord(packageName)
+
+        // Optional: keep a human-readable text record (nice for generic NFC readers)
+        val fallbackText =
+            "MRTF tag detected. Install MRTF NFC: $INSTALL_URL"
+        val textRecord = createTextRecord(lang = "en", text = fallbackText)
+
+        // Recommended order: URI -> MIME -> AAR -> TEXT
+        return NdefMessage(arrayOf(uriRecord, mrtfRecord, aarRecord, textRecord))
     }
+
 
     private fun createTextRecord(lang: String, text: String): NdefRecord {
         val langBytes = lang.toByteArray(Charsets.US_ASCII)
@@ -251,6 +261,21 @@ class MainActivity : AppCompatActivity() {
             if (mrtfRecord != null) {
                 val frame = mrtfRecord.payload
                 val parsed = MrtfProtocolV1.parse(frame)
+
+                if (parsed.crcPresent && parsed.crcValid == false) {
+                    toast("Read failed: checksum mismatch")
+                    if (isDebugEnabled()) {
+                        val hex = frame.joinToString(" ") { b -> "%02X".format(b) }
+                        startActivity(
+                            Intent(this, DebugPayloadActivity::class.java).apply {
+                                putExtra("raw_payload", hex)
+                                putExtra("parsed_action", "CRC INVALID (expected=${parsed.crcExpected} computed=${parsed.crcComputed})")
+                                putExtra("timestamp", System.currentTimeMillis().toString())
+                            }
+                        )
+                    }
+                    return
+            }
 
                 if (parsed == null) {
                     toast("Read failed: Invalid MRTF frame")
