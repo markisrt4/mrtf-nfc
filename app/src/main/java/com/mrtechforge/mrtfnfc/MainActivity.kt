@@ -27,6 +27,8 @@ class MainActivity : AppCompatActivity() {
 
     private val MRTF_MIME = "application/mrtf"
     private val MRTF_MIME_LEGACY = "application/vnd.mrtechforge.mrtf"
+    // TODO: update this later.
+    private val INSTALL_URL = "https://mrtechforge.com/mrtf-nfc"
 
     private var nfcAdapter: NfcAdapter? = null
     private var pendingIntent: PendingIntent? = null
